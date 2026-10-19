@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.urls import path
-from home import views
+from home import views  # Correctly importing views from your home app
 
 urlpatterns = [
 
@@ -12,7 +12,7 @@ urlpatterns = [
     # =========================
     # HOME & GENERAL
     # =========================
-    path("", views.home, name="home"),
+    path("", views.home, name="home"),  # This correctly handles your root URL
     path("about/", views.about, name="about"),
     path("assistant/", views.assistant, name="assistant"),
 

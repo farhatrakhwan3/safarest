@@ -1,5 +1,5 @@
 /**
- * Professional AutoCAD Web Engine - Selection & Multi-Delete Engine
+ * Professional AutoCAD Web Engine - Selection, Multi-Delete, Ortho/Snap/Grid & Estimation
  */
 
 // Core Three.js Engine Variables
@@ -23,6 +23,10 @@ let activeBufferObj = null;
 let drawnObjects = [];         // Holds all active scene entities
 let selectedObjects = [];      // Currently selected items
 let hoverObject = null;        // Currently hovered item
+
+// Drafting Aids (bound to the Ortho / Snap / Grid checkboxes)
+let orthoMode = false;         // constrains lines to horizontal / vertical
+let snapMode = false;          // endpoint snapping to existing geometry
 
 // UI Dynamic Input Elements
 let dynamicInputHUD, dynamicInputBox;
@@ -185,8 +189,61 @@ function getCursorWorldCoordinates() {
     return new THREE.Vector3(0, 0, 0);
 }
 
+// ---------- Drafting aids: SNAP then ORTHO ----------
+function applySnap(pt) {
+    if (!snapMode || drawnObjects.length === 0) return pt;
+    const tol = 14 / camera.zoom;               // 14 px tolerance in world units
+    let best = null, bestD = tol;
+    drawnObjects.forEach(obj => {
+        const pts = obj.userData && obj.userData.points;
+        if (pts) pts.forEach(p => {
+            const d = Math.hypot(p.x - pt.x, p.y - pt.y);
+            if (d < bestD) { bestD = d; best = p; }
+        });
+    });
+    return best ? new THREE.Vector3(best.x, best.y, 0) : pt;
+}
+
+function applyOrtho(pt) {
+    if (!orthoMode || !basePoint || currentTool === 'circle') return pt;
+    const dx = Math.abs(pt.x - basePoint.x), dy = Math.abs(pt.y - basePoint.y);
+    if (dx >= dy) return new THREE.Vector3(pt.x, basePoint.y, 0);   // horizontal
+    return new THREE.Vector3(basePoint.x, pt.y, 0);                 // vertical
+}
+
 function formatVal(val) {
     return val.toFixed(sysPrecision) + ' ' + sysUnits;
+}
+
+function formatArea(a) {
+    return a.toFixed(sysPrecision) + ' ' + sysUnits + '²';
+}
+
+function pathLength(pts) {
+    let L = 0;
+    for (let i = 1; i < pts.length; i++) L += pts[i - 1].distanceTo(pts[i]);
+    return L;
+}
+
+// Human-readable measurement of any drawn entity (the "estimation")
+function describeObject(obj) {
+    const u = obj.userData || {};
+    switch (u.type) {
+        case 'line':
+            return 'LINE  length = ' + formatVal(u.length || 0);
+        case 'polyline':
+            return 'PLINE  total length = ' + formatVal(u.length || pathLength(u.points || []));
+        case 'rect':
+            return 'RECT  ' + formatVal(u.w) + ' × ' + formatVal(u.h) +
+                   '  |  Area = ' + formatArea(u.area) +
+                   '  |  Perimeter = ' + formatVal(u.length);
+        case 'circle':
+            return 'CIRCLE  r = ' + formatVal(u.radius) +
+                   '  |  Area = ' + formatArea(Math.PI * u.radius * u.radius) +
+                   '  |  Circumference = ' + formatVal(2 * Math.PI * u.radius);
+        default:
+            return '';
+    }
 }
 
 function setCommandPrompt(msg) {
@@ -202,10 +259,14 @@ function onMouseMove(event) {
     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
-    const pt = getCursorWorldCoordinates();
+    const rawPt = getCursorWorldCoordinates();
+    const pt = applyOrtho(applySnap(rawPt));
 
     const coordEl = document.getElementById('cad-coords');
-    if (coordEl) coordEl.innerText = `X: ${formatVal(pt.x)} | Y: ${formatVal(pt.y)}`;
+    if (coordEl) {
+        const tag = (snapMode && pt !== rawPt) ? ' (snapped)' : '';
+        coordEl.innerText = `X: ${formatVal(pt.x)} | Y: ${formatVal(pt.y)}${tag}`;
+    }
 
     if (dynamicInputHUD) {
         dynamicInputHUD.style.left = `${event.clientX - rect.left + 18}px`;
@@ -249,7 +310,8 @@ function clearSelection() {
 }
 
 function onCanvasClick(event) {
-    const pt = getCursorWorldCoordinates();
+    // pick point -> snap to endpoints -> ortho constraint
+    const pt = applyOrtho(applySnap(getCursorWorldCoordinates()));
 
     // Multi-Selection Logic in Select Mode
     if (currentTool === 'select') {
@@ -260,7 +322,6 @@ function onCanvasClick(event) {
             const clickedObj = intersects[0].object;
 
             if (event.shiftKey) {
-                // Shift + Click to toggle individual items
                 if (selectedObjects.includes(clickedObj)) {
                     selectedObjects = selectedObjects.filter(o => o !== clickedObj);
                     clickedObj.material.color.setHex(clickedObj.userData.originalColor || 0xffffff);
@@ -269,14 +330,14 @@ function onCanvasClick(event) {
                     clickedObj.material.color.setHex(0x00ffff);
                 }
             } else {
-                // Regular Click selects multiple or replaces selection
                 if (!selectedObjects.includes(clickedObj)) {
                     clearSelection();
                     selectedObjects.push(clickedObj);
                     clickedObj.material.color.setHex(0x00ffff);
                 }
             }
-            setCommandPrompt(`Selected ${selectedObjects.length} object(s). Press DELETE to erase.`);
+            const est = describeObject(clickedObj);
+            setCommandPrompt(`Selected ${selectedObjects.length} object(s)${est ? ' — ' + est : ''}. Press DELETE to erase.`);
             return;
         } else if (!event.shiftKey) {
             clearSelection();
@@ -334,6 +395,7 @@ function setTool(toolName) {
     switch (toolName) {
         case 'line': setCommandPrompt('Command: LINE — Pick start point:'); break;
         case 'polyline': setCommandPrompt('Command: PLINE — Pick start point:'); break;
+        case 'rect': setCommandPrompt('Command: RECT — Pick first corner:'); break;
         case 'circle': setCommandPrompt('Command: CIRCLE — Pick center point:'); break;
         case 'arc': setCommandPrompt('Command: ARC — Pick start point:'); break;
         case 'text': setCommandPrompt('Command: TEXT — Pick insertion point:'); break;
@@ -361,6 +423,9 @@ function handleToolClick(pt) {
         } else if (currentTool === 'polyline') {
             currentPoints.push(pt.clone());
             setCommandPrompt('PLINE — Next point (Press ENTER to finish, "C" to close):');
+        } else if (currentTool === 'rect') {
+            commitRect(basePoint, pt);
+            finishTool();
         } else if (currentTool === 'circle') {
             commitCircle(basePoint, basePoint.distanceTo(pt));
             finishTool();
@@ -385,18 +450,47 @@ function commitLine(p1, p2) {
     const geom = new THREE.BufferGeometry().setFromPoints([p1, p2]);
     const mat = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 2 });
     const line = new THREE.Line(geom, mat);
-    line.userData = { type: 'line', originalColor: 0xffffff };
+    const L = p1.distanceTo(p2);
+    line.userData = { type: 'line', points: [p1, p2], length: L, originalColor: 0xffffff };
     scene.add(line);
     drawnObjects.push(line);
+    setCommandPrompt('LINE — length = ' + formatVal(L) + '  (pick next point, ESC to end)');
 }
 
 function commitPolyline(pts) {
     const geom = new THREE.BufferGeometry().setFromPoints(pts);
     const mat = new THREE.LineBasicMaterial({ color: 0x00ff00, linewidth: 2 });
     const pline = new THREE.Line(geom, mat);
-    pline.userData = { type: 'polyline', points: pts, originalColor: 0x00ff00 };
+    pline.userData = { type: 'polyline', points: pts, length: pathLength(pts), originalColor: 0x00ff00 };
     scene.add(pline);
     drawnObjects.push(pline);
+    setCommandPrompt('PLINE — total length = ' + formatVal(pline.userData.length));
+}
+
+function commitRect(p1, p2) {
+    const corners = [
+        new THREE.Vector3(p1.x, p1.y, 0),
+        new THREE.Vector3(p2.x, p1.y, 0),
+        new THREE.Vector3(p2.x, p2.y, 0),
+        new THREE.Vector3(p1.x, p2.y, 0)
+    ];
+    const closed = corners.concat([corners[0].clone()]);
+    const w = Math.abs(p2.x - p1.x), h = Math.abs(p2.y - p1.y);
+    const geom = new THREE.BufferGeometry().setFromPoints(closed);
+    const mat = new THREE.LineBasicMaterial({ color: 0xffa500, linewidth: 2 });
+    const rect = new THREE.Line(geom, mat);
+    rect.userData = {
+        type: 'rect', w, h,
+        points: corners,
+        length: 2 * (w + h),
+        area: w * h,
+        originalColor: 0xffa500
+    };
+    scene.add(rect);
+    drawnObjects.push(rect);
+    setCommandPrompt('RECT — ' + formatVal(w) + ' × ' + formatVal(h) +
+        '  |  Area = ' + formatArea(w * h) +
+        '  |  Perimeter = ' + formatVal(2 * (w + h)));
 }
 
 function commitCircle(center, radius) {
@@ -408,9 +502,15 @@ function commitCircle(center, radius) {
     const geom = new THREE.BufferGeometry().setFromPoints(pts);
     const mat = new THREE.LineBasicMaterial({ color: 0xffff00, linewidth: 2 });
     const circle = new THREE.Line(geom, mat);
-    circle.userData = { type: 'circle', center: center, radius: radius, originalColor: 0xffff00 };
+    // store every 8th point for endpoint snapping
+    const snapPts = [];
+    for (let i = 0; i < pts.length; i += 8) snapPts.push(pts[i]);
+    circle.userData = { type: 'circle', center: center, radius: radius, points: snapPts, originalColor: 0xffff00 };
     scene.add(circle);
     drawnObjects.push(circle);
+    setCommandPrompt('CIRCLE — r = ' + formatVal(radius) +
+        '  |  Area = ' + formatArea(Math.PI * radius * radius) +
+        '  |  Circumference = ' + formatVal(2 * Math.PI * radius));
 }
 
 function createTextEntity(pt, textStr) {
@@ -437,11 +537,25 @@ function updateActiveBufferPreview(pt) {
     if (currentTool === 'line') {
         const geom = new THREE.BufferGeometry().setFromPoints([basePoint, pt]);
         activeBufferObj = new THREE.Line(geom, mat);
-        setCommandPrompt(`LINE — Dist: ${formatVal(basePoint.distanceTo(pt))}`);
+        const seg = basePoint.distanceTo(pt);
+        setCommandPrompt(`LINE — Dist: ${formatVal(seg)}${orthoMode ? '  [ORTHO]' : ''}${snapMode ? '  [SNAP]' : ''}`);
     } else if (currentTool === 'polyline') {
         const pts = [...currentPoints, pt];
         const geom = new THREE.BufferGeometry().setFromPoints(pts);
         activeBufferObj = new THREE.Line(geom, mat);
+        setCommandPrompt(`PLINE — running length: ${formatVal(pathLength(pts))}`);
+    } else if (currentTool === 'rect') {
+        const preview = [
+            new THREE.Vector3(basePoint.x, basePoint.y, 0),
+            new THREE.Vector3(pt.x, basePoint.y, 0),
+            new THREE.Vector3(pt.x, pt.y, 0),
+            new THREE.Vector3(basePoint.x, pt.y, 0),
+            new THREE.Vector3(basePoint.x, basePoint.y, 0)
+        ];
+        const geom = new THREE.BufferGeometry().setFromPoints(preview);
+        activeBufferObj = new THREE.Line(geom, mat);
+        const w = Math.abs(pt.x - basePoint.x), h = Math.abs(pt.y - basePoint.y);
+        setCommandPrompt(`RECT — ${formatVal(w)} × ${formatVal(h)} | Area = ${formatArea(w * h)}`);
     } else if (currentTool === 'circle') {
         const rad = basePoint.distanceTo(pt);
         const pts = [];
@@ -466,9 +580,39 @@ function clearActiveBuffer() {
 }
 
 // ==========================================
-// 8. KEYBOARD & INTERACTION LISTENERS
+// 8. DRAFTING-AID TOGGLES (bound to checkboxes)
+// ==========================================
+function setOrtho(v) {
+    orthoMode = !!v;
+    const chk = document.getElementById('chk-ortho');
+    if (chk) chk.checked = orthoMode;
+    setCommandPrompt(`Ortho mode ${orthoMode ? 'ON' : 'OFF'}.`);
+}
+
+function setSnap(v) {
+    snapMode = !!v;
+    const chk = document.getElementById('chk-snap');
+    if (chk) chk.checked = snapMode;
+    setCommandPrompt(`Endpoint snap ${snapMode ? 'ON' : 'OFF'}.`);
+}
+
+function toggleGrid() {
+    if (gridHelper) {
+        gridHelper.visible = !gridHelper.visible;
+        const chk = document.getElementById('chk-grid');
+        if (chk) chk.checked = gridHelper.visible;
+        setCommandPrompt(`Grid ${gridHelper.visible ? 'ON' : 'OFF'}.`);
+    }
+}
+
+// ==========================================
+// 9. KEYBOARD & INTERACTION LISTENERS
 // ==========================================
 function onKeyDown(event) {
+    // F8 = Ortho, F9 = Snap (classic AutoCAD keys)
+    if (event.key === 'F8') { setOrtho(!orthoMode); event.preventDefault(); return; }
+    if (event.key === 'F9') { setSnap(!snapMode); event.preventDefault(); return; }
+
     // Delete Key / Backspace Key — Erases all selected objects
     if (event.key === 'Delete' || event.key === 'Backspace') {
         if (document.activeElement !== dynamicInputBox) {
@@ -534,16 +678,11 @@ function resetZoom() {
     setCommandPrompt('Zoom Extents.');
 }
 
-function toggleGrid() {
-    if (gridHelper) {
-        gridHelper.visible = !gridHelper.visible;
-        setCommandPrompt(`Grid ${gridHelper.visible ? 'ON' : 'OFF'}.`);
-    }
-}
-
 // Global Export Bindings
 window.initCADViewer = initCADViewer;
 window.setTool = setTool;
 window.toggleGrid = toggleGrid;
 window.resetZoom = resetZoom;
 window.deleteSelectedObjects = deleteSelectedObjects;
+window.setOrtho = setOrtho;
+window.setSnap = setSnap;

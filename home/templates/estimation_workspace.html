@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}{{ tool_title|default:"CAD & Sheet" }} | SafarEdge{% endblock %}
+{% block title %}{{ tool_title|default:"CAD & Sheet" }} | Safarest{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -109,13 +109,88 @@
         font-size: 13px;
         z-index: 999;
         display: flex;
-        justify-content: space-between;
-        align-items: center;
+        flex-direction: column;
+        gap: 6px;
     }
+
+    .cad-cmd-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    #cad-command-text {
+        white-space: nowrap;
+        color: #00ffcc;
+    }
+
+    #cad-cmd-input {
+        flex: 1;
+        min-width: 0;
+        background: transparent;
+        border: none;
+        border-bottom: 1px solid #3b3b3b;
+        border-radius: 0;
+        outline: none;
+        padding: 4px 2px;
+        color: #ffffff;
+        font-family: inherit;
+        font-size: 13px;
+        caret-color: #00ffcc;
+    }
+
+    #cad-cmd-input:focus {
+        border-bottom-color: #00ffcc;
+        outline: none;
+    }
+
+    #cad-cmd-input::placeholder { color: #666; }
+
+    .cad-cmd-log {
+        display: none;
+        max-height: 110px;
+        overflow-y: auto;
+        font-size: 12px;
+        line-height: 1.5;
+        padding-bottom: 4px;
+        border-bottom: 1px dashed #2f2f2f;
+    }
+
+    .cad-cmd-log.has-lines { display: block; }
+    .cmd-line { color: #9ca3af; white-space: pre-wrap; word-break: break-word; }
+    .cmd-echo { color: #e5e7eb; }
+    .cmd-ok { color: #4ade80; }
+    .cmd-err { color: #f87171; }
+    .cmd-help { color: #7dd3fc; }
 
     .cad-coords-hud {
         color: #aaaaaa;
         font-size: 12px;
+        white-space: nowrap;
+    }
+
+
+    /* Drafting-aid checkboxes (Ortho / Snap / Grid) */
+    .cad-check {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: #2a2a2a;
+        color: #cccccc;
+        border: 1px solid #444;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 13px;
+        cursor: pointer;
+        user-select: none;
+    }
+    .cad-check:hover { background: #3a3a3a; color: #ffffff; }
+    .cad-check input[type="checkbox"] {
+        accent-color: #007acc;
+        width: 14px;
+        height: 14px;
+        cursor: pointer;
+        margin: 0;
     }
 
     .app-tab-bar {
@@ -178,10 +253,17 @@
                 <button class="cad-tool-btn" id="tool-erase" onclick="window.setTool('erase')">
                     <i class="fa-solid fa-eraser"></i> Erase
                 </button>
-                <button class="cad-tool-btn" onclick="window.toggleGrid()">
-                    <i class="fa-solid fa-border-all"></i> Grid
-                </button>
+                                <label class="cad-check" title="Ortho (F8) — lock lines horizontal/vertical">
+                    <input type="checkbox" id="chk-ortho" onchange="window.setOrtho(this.checked)"> Ortho
+                </label>
+                <label class="cad-check" title="Snap (F9) — snap cursor to endpoints of existing objects">
+                    <input type="checkbox" id="chk-snap" onchange="window.setSnap(this.checked)"> Snap
+                </label>
+                <label class="cad-check" title="Show / hide grid">
+                    <input type="checkbox" id="chk-grid" checked onchange="window.toggleGrid()"> Grid
+                </label>
                 <button class="cad-tool-btn" onclick="window.resetZoom()">
+                    <i class="fa-solid fa-expand"></i> Zoom
                     <i class="fa-solid fa-expand"></i> Zoom Extents
                 </button>
             </div>
@@ -191,8 +273,13 @@
 
             <!-- Step 2: Command Prompt & HUD Overlay -->
             <div class="cad-command-bar">
-                <span id="cad-command-text">Command: SELECT</span>
-                <span class="cad-coords-hud" id="cad-coords">X: 0.00 | Y: 0.00</span>
+                <div class="cad-cmd-log" id="cad-cmd-log" aria-live="polite"></div>
+                <div class="cad-cmd-row">
+                    <span id="cad-command-text">Command: SELECT</span>
+                    <input id="cad-cmd-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false"
+                           placeholder="Type a command (LINE, RECT, VOL 2.5 1.8 0.45, HELP…) and press Enter">
+                    <span class="cad-coords-hud" id="cad-coords">X: 0.00 | Y: 0.00</span>
+                </div>
             </div>
         </div>
 
@@ -215,6 +302,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'js/cad-commandline.js' %}"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         // 1. Initialize CAD Engine

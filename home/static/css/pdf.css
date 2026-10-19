@@ -1,62 +1,337 @@
+/* =========================================================
+   PDF Editor tools – modern card UI (light + dark aware)
+   Works with: .merge-container, .form-group, .button-group,
+               .btn, .btn-select, .btn-merge, .btn-download, .btn-disabled
+   ========================================================= */
+
 .merge-container {
-    max-width: 1000px;
-    margin: 3rem auto;
-    padding: 0.5rem;
+    position: relative;
+    width: 100%;
+    max-width: 760px;
+    margin: 2rem auto;
+    padding: 2rem 1.75rem;
     text-align: center;
-    border: 1px solid #90db8a;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    background-color: #9bd3e0;
+    color: var(--text, #0f172a);
+    background: var(--surface, #ffffff);
+    border: 1px solid var(--border, #cbd5e1);
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(37, 99, 235, 0.14), 0 2px 6px rgba(15, 23, 42, 0.08);
+    overflow: hidden;
+}
+
+/* accent strip on top of the card */
+.merge-container::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 5px;
+    background: linear-gradient(90deg, #1d4ed8, #3b82f6, #38bdf8);
+}
+
+.merge-container h1,
+.merge-container h2 {
+    margin: 0.25rem 0 0.35rem;
+    font-size: clamp(1.4rem, 3.5vw, 1.9rem);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--text, #0f172a);
+}
+
+.merge-container p {
+    margin: 0 0 1.25rem;
+    color: var(--text-muted, #475569);
+    font-size: 0.95rem;
 }
 
 .form-group {
-    margin-bottom: 1rem;
+    margin-bottom: 1.25rem;
 }
 
+.form-group label {
+    display: block;
+    margin-bottom: 0.4rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-align: left;
+    color: var(--text-muted, #475569);
+}
+
+/* ---------- Drop-zone style file picker ---------- */
+input[type="file"] {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    margin: 0.75rem auto;
+    padding: 2rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    color: var(--text-muted, #475569);
+    font: inherit;
+    font-size: 0.95rem;
+    background: color-mix(in srgb, var(--primary, #2563eb) 7%, var(--surface, #fff));
+    border: 2px dashed color-mix(in srgb, var(--primary, #2563eb) 55%, transparent);
+    border-radius: 16px;
+    transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+}
+
+input[type="file"]:hover {
+    border-color: var(--primary, #2563eb);
+    background: color-mix(in srgb, var(--primary, #2563eb) 13%, var(--surface, #fff));
+}
+
+input[type="file"]:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--primary, #2563eb) 45%, transparent);
+    outline-offset: 2px;
+}
+
+input[type="file"]::file-selector-button {
+    margin-right: 14px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #2563eb, #3b82f6);
+    color: #ffffff;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.35);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+input[type="file"]::file-selector-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(37, 99, 235, 0.45);
+}
+
+/* ---------- Selected files list (use if your page renders one) ---------- */
+.file-list {
+    list-style: none;
+    margin: 0 0 1.25rem;
+    padding: 0;
+    text-align: left;
+    display: grid;
+    gap: 8px;
+}
+
+.file-list li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--surface-alt, #f1f5f9);
+    border: 1px solid var(--border, #cbd5e1);
+    border-radius: 12px;
+    font-size: 0.92rem;
+    word-break: break-all;
+}
+
+/* ---------- Buttons ---------- */
 .button-group {
     display: flex;
-    gap: 15px;
+    gap: 12px;
     justify-content: center;
     flex-wrap: wrap;
+    margin-top: 0.5rem;
 }
 
 .btn {
-    padding: 12px 24px;
-    border-radius: 5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 26px;
+    border: none;
+    border-radius: 999px;
+    font: inherit;
     font-weight: 600;
+    font-size: 0.95rem;
     cursor: pointer;
     text-decoration: none;
-    border: none;
-    transition: background-color 0.3s ease;
+    transition: transform 0.15s ease, box-shadow 0.2s ease, background-color 0.2s ease, filter 0.2s ease;
+}
+
+.btn:hover { transform: translateY(-2px); filter: brightness(1.06); }
+.btn:active { transform: translateY(0); }
+.btn:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--primary, #2563eb) 50%, transparent);
+    outline-offset: 2px;
 }
 
 .btn-select {
-    background-color: #6c757d;
-    color: white;
+    background: var(--surface-alt, #f1f5f9);
+    color: var(--text, #0f172a);
+    border: 1px solid var(--border, #cbd5e1);
 }
 
 .btn-merge {
-    background-color: #007bff;
-    color: white;
+    background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+    color: #ffffff;
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
 }
 
 .btn-download {
-    background-color: #28a745;
-    color: white;
+    background: linear-gradient(135deg, #059669, #10b981);
+    color: #ffffff;
+    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
 }
 
-.btn:hover {
-    opacity: 0.9;
-}
-
-.btn-disabled {
-    background-color: #d6d6d6;
-    color: #888;
+.btn-disabled,
+.btn:disabled {
+    background: var(--surface-alt, #e2e8f0);
+    color: var(--text-muted, #94a3b8);
+    border: 1px solid var(--border, #cbd5e1);
+    box-shadow: none;
     pointer-events: none;
     cursor: not-allowed;
+    filter: none;
+    transform: none;
 }
 
-input[type="file"] {
-    display: block;
-    margin: 10px auto;
+/* ---------- Small screens ---------- */
+@media (max-width: 600px) {
+    .merge-container {
+        margin: 0.75rem auto;
+        padding: 1.5rem 1rem;
+        border-radius: 16px;
+    }
+
+    input[type="file"] { padding: 1.5rem 0.75rem; font-size: 0.85rem; }
+
+    input[type="file"]::file-selector-button {
+        display: block;
+        margin: 0 auto 10px;
+    }
+
+    .btn { width: 100%; }
 }
+
+/* =========================================================
+   Converter pages (PDF <-> Word / Excel)
+   ========================================================= */
+.conv-flow {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0.5rem 0 0.25rem;
+    color: var(--text-muted, #475569);
+}
+
+.conv-badge {
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.8rem;
+    letter-spacing: 0.06em;
+    background: var(--surface-alt, #f1f5f9);
+    border: 1px solid var(--border, #cbd5e1);
+    color: var(--text, #0f172a);
+}
+
+.conv-badge-out {
+    background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+    border-color: transparent;
+    color: #ffffff;
+}
+
+.conv-hint {
+    display: block;
+    margin-top: 0.25rem;
+    color: var(--text-muted, #475569);
+    font-size: 0.8rem;
+}
+
+.conv-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 1.25rem;
+    color: var(--text-muted, #475569);
+    font-size: 0.95rem;
+}
+.conv-status[hidden], .conv-alert[hidden], .conv-result[hidden] { display: none; }
+
+.conv-spinner {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 3px solid color-mix(in srgb, var(--primary, #2563eb) 25%, transparent);
+    border-top-color: var(--primary, #2563eb);
+    animation: conv-spin 0.8s linear infinite;
+}
+@keyframes conv-spin { to { transform: rotate(360deg); } }
+
+.conv-alert {
+    margin-top: 1.25rem;
+    padding: 12px 16px;
+    border-radius: 12px;
+    text-align: left;
+    font-size: 0.92rem;
+    color: #991b1b;
+    background: #fee2e2;
+    border: 1px solid #fca5a5;
+}
+:root[data-theme="dark"] .conv-alert {
+    color: #fecaca;
+    background: #3b1218;
+    border-color: #7f1d1d;
+}
+
+.conv-result {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-top: 1.25rem;
+    padding: 14px 16px;
+    border-radius: 14px;
+    text-align: left;
+    background: var(--surface-alt, #f1f5f9);
+    border: 1px solid var(--border, #cbd5e1);
+}
+.conv-ok { color: #16a34a; font-size: 32px !important; }
+.conv-result-text { flex: 1; min-width: 160px; display: flex; flex-direction: column; word-break: break-all; }
+.conv-result-text span { color: var(--text-muted, #475569); font-size: 0.85rem; }
+
+.conv-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 1.5rem 0 0 !important;
+    text-align: left;
+    font-size: 0.85rem !important;
+}
+.conv-note .material-symbols-outlined { font-size: 18px; margin-top: 1px; }
+
+.conv-others {
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border, #cbd5e1);
+}
+.conv-others-label {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted, #475569);
+}
+.conv-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.conv-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--primary, #2563eb);
+    background: var(--surface, #ffffff);
+    border: 1px solid var(--border, #cbd5e1);
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+.conv-chip:hover { border-color: var(--primary, #2563eb); background: var(--primary-soft, #dbeafe); }
+.conv-chip .material-symbols-outlined { font-size: 18px; }
+:root[data-theme="dark"] .conv-chip:hover { background: color-mix(in srgb, var(--primary, #60a5fa) 20%, var(--surface, #111a2e)); }

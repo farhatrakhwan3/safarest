@@ -4,11 +4,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}SafarEdge{% endblock %}</title>
+    <meta name="theme-color" content="#2563eb">
+    <title>{% block title %}Safarest{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{% static 'images/Safarest.png' %}">
+
+    <!-- Apply saved / system theme BEFORE first paint (prevents flash) -->
+    <script>
+        (function () {
+            var theme = null;
+            try { theme = localStorage.getItem('safaredge-theme'); } catch (e) {}
+            if (theme !== 'light' && theme !== 'dark') {
+                theme = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+            }
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
 
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
-    
-    <!-- FontAwesome for Icons -->
+
+    <!-- Google Material Symbols (icons) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap">
+
+    <!-- FontAwesome (still used inside CAD / estimation workspaces) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- Luckysheet CSS Dependencies -->
@@ -28,11 +47,47 @@
     <script src="{% static 'js/cad-viewer.js' %}"></script>
     <script src="{% static 'js/sheet-viewer.js' %}"></script>
     <script src="{% static 'js/app.js' %}"></script>
-    
+
     <script>
+        /* ---------- Theme (light / dark) ---------- */
+        function toggleTheme() {
+            var root = document.documentElement;
+            var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            root.setAttribute('data-theme', next);
+            try { localStorage.setItem('safaredge-theme', next); } catch (e) {}
+        }
+
+        /* Keep other open tabs/windows (tools open in new windows) in sync */
+        window.addEventListener('storage', function (e) {
+            if (e.key === 'safaredge-theme' && (e.newValue === 'light' || e.newValue === 'dark')) {
+                document.documentElement.setAttribute('data-theme', e.newValue);
+            }
+        });
+
+        /* ---------- Mobile drawer ---------- */
+        function toggleDrawer() {
+            var open = document.body.classList.toggle('menu-open');
+            var btn = document.getElementById('menuToggle');
+            if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        }
+
+        function closeDrawer() {
+            document.body.classList.remove('menu-open');
+            var btn = document.getElementById('menuToggle');
+            if (btn) btn.setAttribute('aria-expanded', 'false');
+        }
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') { closeDrawer(); hideAllSubmenus(); }
+        });
+
+        /* ---------- Menu ---------- */
         function hideAllSubmenus() {
             document.querySelectorAll('.submenu-right').forEach(menu => {
                 menu.style.display = 'none';
+            });
+            document.querySelectorAll('.menu .chevron').forEach(c => {
+                c.style.transform = '';
             });
         }
 
@@ -53,6 +108,8 @@
             if (!isAlreadyOpen) {
                 submenu.style.display = 'block';
                 menuEl.classList.add('active');
+                const chev = menuEl.querySelector('.chevron');
+                if (chev) chev.style.transform = 'rotate(180deg)';
             }
         }
 
@@ -71,7 +128,7 @@
                 document.body.classList.add("home-active");
             } else {
                 document.body.classList.remove('home-active');
-                
+
                 document.querySelectorAll('.menu a[href]').forEach(link => {
                     const linkPath = new URL(link.href, window.location.origin).pathname;
                     if (currentPath === linkPath && link.getAttribute('href') !== "javascript:void(0)") {
@@ -83,6 +140,13 @@
                     }
                 });
             }
+
+            /* Close the mobile drawer after choosing a real link */
+            document.querySelectorAll('.menu a[href]').forEach(link => {
+                if (link.getAttribute('href') !== "javascript:void(0)") {
+                    link.addEventListener('click', closeDrawer);
+                }
+            });
         });
 
         const toolWindows = {};
@@ -101,18 +165,43 @@
         }
     </script>
     {% block extra_js %}{% endblock %}
+<base target="_blank">
 </head>
 
 <body class="{% block body_class %}{% endblock %}">
 
+    <!-- Mobile top bar -->
+    <header class="topbar">
+        <button class="icon-btn" id="menuToggle" type="button" onclick="toggleDrawer()" aria-label="Open menu" aria-expanded="false" aria-controls="sideMenu">
+            <span class="material-symbols-outlined">menu</span>
+        </button>
+        <img src="{% static 'images/Safarest.png' %}" alt="Safarest" style="width:30px;height:30px;border-radius:8px;object-fit:cover;">
+        <span class="topbar-title">Safarest</span>
+        <button class="icon-btn" type="button" onclick="toggleTheme()" aria-label="Toggle light or dark mode">
+            <span class="material-symbols-outlined when-light">dark_mode</span>
+            <span class="material-symbols-outlined when-dark">light_mode</span>
+        </button>
+    </header>
+    <div class="menu-backdrop" onclick="closeDrawer()"></div>
+
     <div class="layout">
 
-        <div class="menu">
-            <a id="homeMenu" href="{% url 'home' %}">Home</a>
+        <nav class="menu" id="sideMenu">
+            <div class="brand">
+                <img src="{% static 'images/Safarest.png' %}" alt="Safarest logo" style="width:36px;height:36px;border-radius:9px;object-fit:cover;box-shadow:0 2px 8px rgba(0,0,0,0.35);">
+                <span>Safarest</span>
+            </div>
+
+            <a id="homeMenu" href="{% url 'home' %}">
+                <span class="material-symbols-outlined">home</span><span class="label">Home</span>
+            </a>
 
             <!-- Estimation Submenus -->
             <div class="menu-item">
-                <a id="estimationMenu" href="javascript:void(0)" onclick="toggleMenu(event,'estimationSubmenu',this)">Estimation</a>
+                <a id="estimationMenu" href="javascript:void(0)" onclick="toggleMenu(event,'estimationSubmenu',this)">
+                    <span class="material-symbols-outlined">calculate</span><span class="label">Estimation</span>
+                    <span class="material-symbols-outlined chevron">expand_more</span>
+                </a>
                 <div class="submenu-right" id="estimationSubmenu">
                     <a href="{% url 'estimation_workspace' 'footing' %}" onclick="openTool(event,'estimation_footing')">Footing</a>
                     <a href="{% url 'estimation_workspace' 'beam' %}" onclick="openTool(event,'estimation_beam')">Beam</a>
@@ -124,7 +213,10 @@
             </div>
 
             <div class="menu-item">
-                <a id="qaqcMenu" href="javascript:void(0)" onclick="toggleMenu(event,'qaqcSubmenu',this)">QA/QC</a>
+                <a id="qaqcMenu" href="javascript:void(0)" onclick="toggleMenu(event,'qaqcSubmenu',this)">
+                    <span class="material-symbols-outlined">science</span><span class="label">QA/QC</span>
+                    <span class="material-symbols-outlined chevron">expand_more</span>
+                </a>
                 <div class="submenu-right" id="qaqcSubmenu">
                     <a href="{% url 'qaqc_moisture' %}" onclick="openTool(event,'qaqc_moisture')">Moisture</a>
                     <a href="{% url 'qaqc_sieve' %}" onclick="openTool(event,'qaqc_sieve')">Sieve Analysis</a>
@@ -135,7 +227,10 @@
             </div>
 
             <div class="menu-item">
-                <a id="surveyMenu" href="javascript:void(0)" onclick="toggleMenu(event,'surveySubmenu',this)">Survey</a>
+                <a id="surveyMenu" href="javascript:void(0)" onclick="toggleMenu(event,'surveySubmenu',this)">
+                    <span class="material-symbols-outlined">straighten</span><span class="label">Survey</span>
+                    <span class="material-symbols-outlined chevron">expand_more</span>
+                </a>
                 <div class="submenu-right" id="surveySubmenu">
                     <a href="{% url 'sur_sympson' %}" onclick="openTool(event,'sur_sympson')">Simpson Rule</a>
                     <a href="{% url 'sur_area' %}" onclick="openTool(event,'sur_area')">Area Calculation</a>
@@ -143,7 +238,10 @@
             </div>
 
             <div class="menu-item">
-                <a id="aptMenu" href="javascript:void(0)" onclick="toggleMenu(event,'aptSubmenu',this)">Civil Aptitude</a>
+                <a id="aptMenu" href="javascript:void(0)" onclick="toggleMenu(event,'aptSubmenu',this)">
+                    <span class="material-symbols-outlined">school</span><span class="label">Civil Aptitude</span>
+                    <span class="material-symbols-outlined chevron">expand_more</span>
+                </a>
                 <div class="submenu-right" id="aptSubmenu">
                     <a href="{% url 'apt_weight' %}" onclick="openTool(event,'apt_weight')">Unit Weight</a>
                     <a href="{% url 'apt_area' %}" onclick="openTool(event,'apt_area')">Area Formula</a>
@@ -152,28 +250,47 @@
             </div>
 
             <div class="menu-item">
-                <a id="pdfMenu" href="javascript:void(0)" onclick="toggleMenu(event,'pdfSubmenu',this)">PDF Editor</a>
+                <a id="pdfMenu" href="javascript:void(0)" onclick="toggleMenu(event,'pdfSubmenu',this)">
+                    <span class="material-symbols-outlined">picture_as_pdf</span><span class="label">PDF Editor</span>
+                    <span class="material-symbols-outlined chevron">expand_more</span>
+                </a>
                 <div class="submenu-right" id="pdfSubmenu">
-                    <a href="{% url 'pdf_merge' %}" onclick="openTool(event,'pdf_merge')">Merge</a>
-                    <a href="{% url 'pdf_split' %}" onclick="openTool(event,'pdf_split')">Split</a>
-                    <a href="{% url 'pdf_rotate' %}" onclick="openTool(event,'pdf_rotate')">Rotate</a>
-                    <a href="{% url 'pdf_crop' %}" onclick="openTool(event,'pdf_crop')">Crop</a>
-                    <a href="{% url 'pdf_unlock' %}" onclick="openTool(event,'pdf_unlock')">Unlock</a>
-                    <a href="{% url 'pdf_lock' %}" onclick="openTool(event,'pdf_lock')">Lock</a>
-                    <a href="{% url 'pdf_shade' %}" onclick="openTool(event,'pdf_shade')">Remove Shade</a>
+                    <a href="{% url 'pdf_merge' %}" onclick="openTool(event,'pdf_merge')"><span class="material-symbols-outlined">merge</span>Merge</a>
+                    <a href="{% url 'pdf_split' %}" onclick="openTool(event,'pdf_split')"><span class="material-symbols-outlined">call_split</span>Split</a>
+                    <a href="{% url 'pdf_rotate' %}" onclick="openTool(event,'pdf_rotate')"><span class="material-symbols-outlined">rotate_right</span>Rotate</a>
+                    <a href="{% url 'pdf_crop' %}" onclick="openTool(event,'pdf_crop')"><span class="material-symbols-outlined">crop</span>Crop</a>
+                    <a href="{% url 'pdf_unlock' %}" onclick="openTool(event,'pdf_unlock')"><span class="material-symbols-outlined">lock_open</span>Unlock</a>
+                    <a href="{% url 'pdf_lock' %}" onclick="openTool(event,'pdf_lock')"><span class="material-symbols-outlined">lock</span>Lock</a>
+                    <a href="{% url 'pdf_shade' %}" onclick="openTool(event,'pdf_shade')"><span class="material-symbols-outlined">ink_eraser</span>Remove Shade</a>
                 </div>
             </div>
 
             <!-- Single CAD & Sheet menu item (Lower position) -->
-            <a id="cadMenu" href="{% url 'cad_workspace' %}" onclick="openTool(event,'cad_workspace')">CAD & Sheet</a>
+            <a id="cadMenu" href="{% url 'cad_workspace' %}" onclick="openTool(event,'cad_workspace')">
+                <span class="material-symbols-outlined">architecture</span><span class="label">CAD &amp; Sheet</span>
+            </a>
 
-            <a id="aboutMenu" href="{% url 'about' %}">About</a>
-            <a id="aimenu" href="{% url 'assistant' %}" target="_blank">AI Assistant</a>
-        </div>
+            <a id="aboutMenu" href="{% url 'about' %}">
+                <span class="material-symbols-outlined">info</span><span class="label">About</span>
+            </a>
+            <a id="aimenu" href="{% url 'assistant' %}" target="_blank">
+                <span class="material-symbols-outlined">smart_toy</span><span class="label">AI Assistant</span>
+            </a>
 
-        <div class="content">
+            <div class="menu-spacer"></div>
+
+            <!-- Light / Dark toggle (desktop sidebar + inside mobile drawer) -->
+            <button class="theme-toggle" type="button" onclick="toggleTheme()" aria-label="Toggle light or dark mode">
+                <span class="material-symbols-outlined when-light">dark_mode</span>
+                <span class="material-symbols-outlined when-dark">light_mode</span>
+                <span class="label when-light">Dark mode</span>
+                <span class="label when-dark">Light mode</span>
+            </button>
+        </nav>
+
+        <main class="content">
             {% block content %}{% endblock %}
-        </div>
+        </main>
 
     </div>
 

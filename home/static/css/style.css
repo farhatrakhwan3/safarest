@@ -1,131 +1,229 @@
+/* =========================================================
+   Safarest – main stylesheet
+   Blue theme · light/dark mode · responsive layout
+   ========================================================= */
+
+/* ===== THEME TOKENS ===== */
+:root {
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --primary-soft: #dbeafe;
+    --primary-contrast: #ffffff;
+
+    --bg: #eff6ff;
+    --surface: #ffffff;
+    --surface-alt: #f1f5f9;
+    --text: #0f172a;
+    --text-muted: #475569;
+    --border: #cbd5e1;
+
+    --sidebar-from: #1e3a8a;
+    --sidebar-to: #2563eb;
+    --sidebar-text: #eff6ff;
+    --nav-btn: rgba(255, 255, 255, 0.14);
+    --nav-btn-hover: rgba(255, 255, 255, 0.26);
+    --nav-active-bg: #ffffff;
+    --nav-active-text: #1d4ed8;
+    --submenu-bg: rgba(15, 23, 42, 0.55);
+
+    --content-grad-a: #bfdbfe;
+    --content-grad-b: #eff6ff;
+    --home-grad-a: #93c5fd;
+    --home-grad-b: #dbeafe;
+    --home-grad-c: #eff6ff;
+
+    --shadow: 0 4px 14px rgba(15, 23, 42, 0.15);
+    --radius: 10px;
+
+    --sidebar-w: 250px;
+    --topbar-h: 56px;
+
+    color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+    --primary: #60a5fa;
+    --primary-hover: #93c5fd;
+    --primary-soft: #1e3a8a;
+    --primary-contrast: #0b1220;
+
+    --bg: #0b1220;
+    --surface: #111a2e;
+    --surface-alt: #172238;
+    --text: #e2e8f0;
+    --text-muted: #94a3b8;
+    --border: #26344f;
+
+    --sidebar-from: #0a1330;
+    --sidebar-to: #1e3a8a;
+    --sidebar-text: #e2e8f0;
+    --nav-btn: rgba(255, 255, 255, 0.08);
+    --nav-btn-hover: rgba(255, 255, 255, 0.18);
+    --nav-active-bg: #60a5fa;
+    --nav-active-text: #0b1220;
+    --submenu-bg: rgba(2, 6, 23, 0.8);
+
+    --content-grad-a: #13213f;
+    --content-grad-b: #0b1220;
+    --home-grad-a: #1e3a8a;
+    --home-grad-b: #12234a;
+    --home-grad-c: #0b1220;
+
+    --shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+
+    color-scheme: dark;
+}
+
 /* ===== GLOBAL ===== */
+/* Luckysheet (spreadsheet) is excluded from global resets – it ships its own styles */
+*:not(#luckysheet *),
+*:not(#luckysheet *)::before,
+*:not(#luckysheet *)::after { box-sizing: border-box; }
+
 body {
     margin: 0;
-    font-family: "Segoe UI", Arial, sans-serif;
-    background-color: #f4f6f8;
+    font-family: "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+    background-color: var(--bg);
+    color: var(--text);
+    transition: background-color 0.25s ease, color 0.25s ease;
 }
 
-/* ===== UPDATED CONTENT AREA (Gradient for all pages) ===== */
-.content {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    overflow-y: auto;
-    
-    /* Apply the gradient to all pages by default */
-    background: radial-gradient(
-        circle at bottom right,
-        #61b98dcc,
-        #dfd9a1cc
-    );
-    background-size: 100% 100%;
-    background-repeat: no-repeat;
-}
+h1, h2, h3, h4 { color: var(--text); }
+a { color: var(--primary); }
+img, canvas, video, iframe { max-width: 100%; }
 
-/* ===== GRID PAGES (Excel-style) ===== */
-.grid-page {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;      /* 🔑 grid handles scrolling */
-    background: none;      /* no background */
-}
-
-.grid-wrapper {
-    flex: 1;
-    overflow: auto;        /* ONLY scrolling area */
-    background: #ffffff;  /* clean white sheet */
-}
-
-/* ===== HOME BACKGROUND – ADD IMAGE ONLY ON HOME ===== */
-body.home-active .content {
-    /* Keep the gradient but add the image on top */
-    background-image:
-        url("/static/images/home-bg.webp"),
-        radial-gradient(
-            circle at bottom right,
-            #b9ae43cc,
-            #d6f1e9,
-            #77e285,
-            #e49750
-        );
-
-    background-repeat: no-repeat, no-repeat;
-    background-position: right bottom, right bottom;
-    
-    /* Image takes 60%, Gradient takes 100% */
-    background-size: 60%, 100% 100%;
-}
-
-/* ===== HOME CONTENT ===== */
-.content-inner {
-    max-width: 900px;
-    width: 100%;
-    padding: 40px;
-    text-align: center;
+/* ===== GOOGLE (MATERIAL) ICONS ===== */
+.material-symbols-outlined {
+    font-family: "Material Symbols Outlined";
+    font-weight: normal;
+    font-style: normal;
+    font-size: 22px;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "liga";
+    font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+    user-select: none;
+    flex-shrink: 0;
 }
 
 /* ===== MAIN LAYOUT ===== */
 .layout {
     display: flex;
     height: 100vh;
+    height: 100dvh;
+}
+
+/* ===== MOBILE TOP BAR (hidden on desktop) ===== */
+.topbar {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: var(--topbar-h);
+    padding: 0 12px;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(90deg, var(--sidebar-from), var(--sidebar-to));
+    color: var(--sidebar-text);
+    z-index: 1200;
+    box-shadow: var(--shadow);
+}
+
+.topbar-title {
+    flex: 1;
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: 0.5px;
+}
+
+.icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+.icon-btn:hover { background: var(--nav-btn-hover); }
+.icon-btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+.menu-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(2, 6, 23, 0.55);
+    z-index: 1100;
 }
 
 /* ===== LEFT SIDEBAR ===== */
 .menu {
-    width: 240px;
-    background: linear-gradient(180deg, #a77491, #6673ad);
-    padding: 22px 14px;
+    width: var(--sidebar-w);
+    flex-shrink: 0;
+    background: linear-gradient(180deg, var(--sidebar-from), var(--sidebar-to));
+    padding: 18px 14px;
     display: flex;
     flex-direction: column;
-    gap: 14px;
-    box-shadow: 3px 0 12px rgba(0,0,0,0.35);
+    gap: 10px;
+    box-shadow: 3px 0 12px rgba(0, 0, 0, 0.3);
+    position: relative;
+    z-index: 1150;
 }
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--sidebar-text);
+    font-size: 20px;
+    font-weight: 700;
+    padding: 4px 6px 12px;
+    letter-spacing: 0.5px;
+}
+.brand .material-symbols-outlined { font-size: 28px; }
 
 /* ===== MENU BUTTONS ===== */
 .menu a {
-    background: linear-gradient(180deg, #98a2b1, #5d7eb3);
-    color: #e5e7eb;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--nav-btn);
+    color: var(--sidebar-text);
     text-decoration: none;
-    padding: 12px 18px;
+    padding: 11px 14px;
     font-weight: 600;
-    font-size: 16px;
-    letter-spacing: 0.5px;
+    font-size: 15px;
+    letter-spacing: 0.3px;
     cursor: pointer;
-    border-radius: 6px;
-
-    box-shadow:
-        2px 4px 0 #020617,
-        2px 6px 10px rgba(0,0,0,0.4);
-
-    transition:
-        transform 0.12s ease,
-        box-shadow 0.12s ease,
-        background-color 0.2s ease,
-        color 0.2s ease;
+    border-radius: var(--radius);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    transition: transform 0.12s ease, background-color 0.2s ease, color 0.2s ease;
 }
 
-/* ===== HOVER ===== */
-.menu a:hover {
-    background: linear-gradient(180deg, #475569, #334155);
-    color: #38bdf8;
-}
+.menu a:hover { background: var(--nav-btn-hover); }
+.menu a:active { transform: translateY(1px); }
+.menu a:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 
-/* ===== PRESS ===== */
-.menu a:active {
-    transform: translateY(2px);
-    box-shadow:
-        1px 1px 0 #020617,
-        1px 3px 6px rgba(0,0,0,0.35);
-}
-
-/* ===== ACTIVE MENU ===== */
 .menu a.active {
-    background: linear-gradient(180deg, #38bdf8, #0284c7);
-    color: #020617;
-    box-shadow:
-        2px 4px 0 #075985,
-        2px 6px 12px rgba(0,0,0,0.45);
+    background: var(--nav-active-bg);
+    color: var(--nav-active-text);
+    border-color: transparent;
+    box-shadow: var(--shadow);
+}
+
+.menu a .chevron {
+    margin-left: auto;
+    font-size: 20px;
+    transition: transform 0.2s ease;
 }
 
 /* ===== MENU ITEM CONTAINER ===== */
@@ -135,44 +233,126 @@ body.home-active .content {
     position: relative;
 }
 
-/* ===== SUBMENU (CLICK BASED) ===== */
+/* ===== SUBMENU (click based, flyout on desktop) ===== */
 .submenu-right {
     display: none;
     position: absolute;
     top: 0;
     left: 100%;
     margin-left: 10px;
-    width: 160px;
-    padding: 6px;
-    border-radius: 6px;
-    background: rgba(0,0,0,0.18);
-    z-index: 100;
-    overflow: visible;
+    width: 205px;
+    padding: 8px;
+    border-radius: var(--radius);
+    background: var(--submenu-bg);
+    backdrop-filter: blur(8px);
+    box-shadow: var(--shadow);
+    z-index: 1300;
 }
 
-/* ===== SUBMENU BUTTONS ===== */
 .submenu-right a {
-    display: block;
     font-size: 14px;
-    padding: 6px 8px;
+    padding: 8px 12px;
     margin-bottom: 6px;
-    border-radius: 5px;
-    background: linear-gradient(180deg, #8b8864, #475569);
+    border-radius: 8px;
 }
+.submenu-right a:last-child { margin-bottom: 0; }
+.submenu-right a { gap: 10px; }
+.submenu-label {
+    display: block;
+    margin: 10px 6px 6px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.18);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.65);
+}
+@media (min-width: 901px) {
+    .submenu-right { max-height: calc(100vh - 24px); overflow-y: auto; }
+}
+.submenu-right a .material-symbols-outlined { font-size: 18px; }
 
-/* ===== SUBMENU HOVER ===== */
-.submenu-right a:hover {
-    background: linear-gradient(180deg, #64748b, #334155);
-    color: #38bdf8;
+/* ===== THEME TOGGLE ===== */
+.menu-spacer { flex: 1; }
+
+.theme-toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: var(--radius);
+    background: var(--nav-btn);
+    color: var(--sidebar-text);
+    font: inherit;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
 }
+.theme-toggle:hover { background: var(--nav-btn-hover); }
+.theme-toggle:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+/* show the icon/label for the mode you would switch TO */
+.theme-toggle .when-dark, .icon-btn .when-dark { display: none; }
+:root[data-theme="dark"] .theme-toggle .when-light,
+:root[data-theme="dark"] .icon-btn .when-light { display: none; }
+:root[data-theme="dark"] .theme-toggle .when-dark,
+:root[data-theme="dark"] .icon-btn .when-dark { display: inline-block; }
+.theme-toggle .label.when-dark { display: none; }
+:root[data-theme="dark"] .theme-toggle .label.when-dark { display: inline; }
 
 /* ===== CONTENT AREA ===== */
 .content {
     flex: 1;
+    min-width: 0;
     display: flex;
     justify-content: center;
     overflow-y: auto;
-    background-color: #f4f6f8;
+    padding: 24px;
+    background: radial-gradient(circle at bottom right, var(--content-grad-a), var(--content-grad-b));
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+}
+
+/* ===== HOME BACKGROUND – image only on home ===== */
+body.home-active .content {
+    background-image:
+        url("/static/images/home-bg.webp"),
+        radial-gradient(circle at bottom right, var(--home-grad-a), var(--home-grad-b), var(--home-grad-c));
+    background-repeat: no-repeat, no-repeat;
+    background-position: center, center;
+    background-size: min(520px, 55%), 100% 100%;
+}
+
+/* ===== HOME CONTENT ===== */
+.content-inner {
+    max-width: 900px;
+    width: 100%;
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.content-inner h1 {
+    font-size: clamp(1.6rem, 4vw, 2.6rem);
+    color: var(--primary);
+}
+
+/* ===== GRID PAGES (Excel-style) ===== */
+.grid-page {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: none;
+}
+
+.grid-wrapper {
+    flex: 1;
+    overflow: auto;
+    background: var(--surface);
 }
 
 /* ===== CONTENT SECTIONS ===== */
@@ -182,7 +362,142 @@ body.home-active .content {
     max-width: 900px;
     margin: 0 auto;
 }
+.content-section.active-section { display: block; }
 
-.content-section.active-section {
-    display: block;
+/* ===== GENERIC FORM CONTROLS (theme aware) ===== */
+/* Spreadsheet / Luckysheet widgets are left untouched (see :not rules) */
+input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):not(#luckysheet *):not([class*="luckysheet"]):not([id*="luckysheet"]),
+select:not(#luckysheet *):not([class*="luckysheet"]):not([id*="luckysheet"]),
+textarea:not(#luckysheet *):not([class*="luckysheet"]):not([id*="luckysheet"]) {
+    max-width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+}
+input:focus:not(#luckysheet *):not([class*="luckysheet"]):not([id*="luckysheet"]),
+select:focus:not(#luckysheet *):not([class*="luckysheet"]):not([id*="luckysheet"]),
+textarea:focus:not(#luckysheet *):not([class*="luckysheet"]):not([id*="luckysheet"]) {
+    outline: 2px solid var(--primary);
+    outline-offset: 1px;
+}
+
+table:not(#luckysheet *):not([class*="luckysheet"]) { max-width: 100%; border-collapse: collapse; }
+th:not(#luckysheet *), td:not(#luckysheet *) { border: 1px solid var(--border); padding: 8px 10px; }
+th:not(#luckysheet *) { background: var(--surface-alt); }
+
+/* Luckysheet stays a light "paper" sheet in both themes, so keep its text dark
+   (otherwise the cell editor / name box inherit the light dark-mode text colour) */
+#luckysheet,
+[class*="luckysheet"],
+[id*="luckysheet"] {
+    color: #333;
+}
+#luckysheet-rich-text-editor,
+#luckysheet-input-box,
+.luckysheet-cell-input {
+    color: #000;
+}
+
+/* ===== WORKSPACE TAB BAR (CAD / Spreadsheet pages) – dark mode ===== */
+:root[data-theme="dark"] .app-tab-bar {
+    background-color: var(--surface-alt);
+    border-top-color: var(--border);
+}
+:root[data-theme="dark"] .app-tab {
+    background-color: var(--surface);
+    color: var(--text-muted);
+    border-color: var(--border);
+}
+:root[data-theme="dark"] .app-tab.active {
+    background-color: var(--bg);
+    color: var(--primary);
+    border-top-color: var(--primary);
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+/* Tablets and below: sidebar becomes a slide-in drawer */
+@media (max-width: 900px) {
+    .topbar { display: flex; }
+
+    .layout { padding-top: var(--topbar-h); }
+
+    .menu {
+        position: fixed;
+        top: 0; bottom: 0; left: 0;
+        width: min(82vw, 290px);
+        padding-top: calc(var(--topbar-h) + 10px);
+        overflow-y: auto;
+        transform: translateX(-105%);
+        transition: transform 0.28s ease;
+        z-index: 1150;
+    }
+    body.menu-open .menu { transform: translateX(0); }
+    body.menu-open .menu-backdrop { display: block; }
+    body.menu-open { overflow: hidden; }
+
+    .brand { display: none; }
+
+    /* submenus become inline accordions inside the drawer */
+    .submenu-right {
+        position: static;
+        width: auto;
+        margin: 6px 0 0 14px;
+        padding: 6px;
+        backdrop-filter: none;
+        box-shadow: none;
+    }
+
+    .content { padding: 16px; }
+
+    body.home-active .content {
+        background-size: min(420px, 80%), 100% 100%;
+        background-position: center, center;
+    }
+
+    /* tool workspaces (CAD / spreadsheet) fill the area below the top bar */
+    .app-workspace { height: calc(100dvh - var(--topbar-h)) !important; }
+}
+
+/* Phones */
+@media (max-width: 600px) {
+    .content { padding: 12px; }
+    .content-inner { padding: 24px 8px; }
+
+    .cad-toolbar {
+        flex-wrap: wrap;
+        right: 10px;
+        left: 10px !important;
+        top: 10px !important;
+        max-height: 40%;
+        overflow-y: auto;
+    }
+    .cad-tool-btn { padding: 6px 8px !important; font-size: 12px !important; }
+
+    .cad-command-bar {
+        left: 8px !important;
+        right: 8px !important;
+        bottom: 8px !important;
+        font-size: 11px !important;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .app-tab-bar { overflow-x: auto; }
+    .app-tab { white-space: nowrap; }
+}
+
+/* Short desktop windows: let the sidebar scroll without breaking flyouts on tall screens */
+@media (min-width: 901px) and (max-height: 640px) {
+    .menu { gap: 6px; padding-top: 10px; }
+    .menu a, .theme-toggle { padding: 8px 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
 }
